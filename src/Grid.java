@@ -1,19 +1,31 @@
 import java.io.*;
 import java.util.Stack;
 
-public class Grid implements Serializable {  // 实现 Serializable 接口
-    private static final long serialVersionUID = 1L; // 推荐使用 serialVersionUID 确保序列化兼容
+public class Grid implements Serializable {
+    private static final long serialVersionUID = 1L;
     private char[][] grid;
-    private Stack<Disc> moveHistory;  // 用于存储每一步的操作
+    private Stack<Disc> moveHistory;
+    private Player player1;
+    private Player player2;
 
-    public Grid() {
+    public Grid(Player player1, Player player2) {
         grid = new char[6][7];
         moveHistory = new Stack<>();
+        this.player1 = player1;
+        this.player2 = player2;
         for (int row = 0; row < grid.length; row++) {
             for (int col = 0; col < grid[row].length; col++) {
                 grid[row][col] = ' ';
             }
         }
+    }
+
+    public Player getPlayer1() {
+        return player1;
+    }
+
+    public Player getPlayer2() {
+        return player2;
     }
 
     // 在指定列放置棋子
