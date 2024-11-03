@@ -3,100 +3,117 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        Grid grid = null;
+        Grid grid;
+        Player player1, player2, currentPlayer;
 
         System.out.println("Welcome to Connect Four!");
         System.out.println("1. Start New Game");
         System.out.println("2. Load Game");
 
         int choice = sc.nextInt();
-        sc.nextLine(); // 清除换行符
-
-        Player player1, player2;
+        sc.nextLine(); // Consume newline
 
         if (choice == 2) {
-            // 尝试加载游戏
-            try {
-                grid = Grid.loadGame("saved_game.dat");
-                player1 = grid.getPlayer1();
-                player2 = grid.getPlayer2();
+            // Attempt to load a saved game state
+            GameState loadedState = GameSaver.loadGame("saved_game.dat");
+            if (loadedState != null) {
+                grid = loadedState.getGrid();
+                player1 = loadedState.getPlayer1();
+                player2 = loadedState.getPlayer2();
+                currentPlayer = loadedState.getCurrentPlayer();
                 System.out.println("Game loaded successfully.");
-            } catch (Exception e) {
-                System.out.println("Failed to load game: " + e.getMessage());
-                System.out.print("Starting a new game instead...\n");
-
-                // 如果加载失败，则重新输入玩家姓名并开始新游戏
+            } else {
+                // Failed to load, so initialize a new game
+                System.out.println("Failed to load game. Starting a new game instead...");
                 player1 = createPlayer(sc, 1);
                 player2 = createPlayer(sc, 2);
-                grid = new Grid(player1, player2);
+                grid = new Grid();
+                currentPlayer = player1;
             }
         } else {
-            // 新游戏模式下输入玩家姓名
+            // Start a new game
             player1 = createPlayer(sc, 1);
             player2 = createPlayer(sc, 2);
-            grid = new Grid(player1, player2);
+            grid = new Grid();
+            currentPlayer = player1;
         }
 
-        // 游戏主循环
+        // Display initial grid and begin game loop
         System.out.println(grid);
         boolean gameInProgress = true;
+
         while (gameInProgress) {
-            gameInProgress = !takeTurn(player1, grid, sc);
-            if (!gameInProgress) break;
-            gameInProgress = !takeTurn(player2, grid, sc);
+            gameInProgress = takeTurn(currentPlayer, grid, player1, player2, sc);
+            // Alternate players after each turn
+            currentPlayer = (currentPlayer == player1) ? player2 : player1;
         }
 
         sc.close();
     }
 
-    // 辅助方法：创建玩家
     private static Player createPlayer(Scanner sc, int playerNumber) {
-        System.out.print("Enter Player " + playerNumber + "'s name: ");
+        System.out.print("Enter name for Player " + playerNumber + ": ");
         String name = sc.nextLine();
         char symbol = (playerNumber == 1) ? 'X' : 'O';
         return new Player(name, symbol);
     }
 
-    // 辅助方法：处理单个玩家的回合
-    private static boolean takeTurn(Player player, Grid grid, Scanner sc) {
+    private static boolean takeTurn(Player currentPlayer, Grid grid, Player player1, Player player2, Scanner sc) {
         while (true) {
             try {
-                System.out.println("Player " + player.getName() + " (" + player.getSymbol() + "), enter column (1-7) or -1 to undo, -2 to save:");
+                System.out.println("Player " + currentPlayer.getName() + " (" + currentPlayer.getSymbol() + "), enter column (1-7) or -1 to undo, or -2 to save:");
                 int col = sc.nextInt();
 
-                if (col == -2) {  // 保存游戏
-                    grid.saveGame("saved_game.dat");
+                if (col == -2) {
+                    // Save the game state
+                    Player opponent = (currentPlayer == player1) ? player2 : player1;
+                    GameSaver.saveGame(new GameState(grid, player1, player2, currentPlayer), "saved_game.dat");
                     System.out.println("Game saved.");
                     continue;
-                } else if (col == -1) {  // 撤销操作
-                    grid.undoMove();
-                    System.out.println("Last move undone.");
-                    System.out.println(grid);
+                } else if (col == -1) {
+                    // Undo last move
+                    if (grid.undoMove()) {
+                        System.out.println("Last move undone.");
+                        System.out.println(grid);
+                    } else {
+                        System.out.println("No moves to undo.");
+                    }
                     continue;
                 }
 
-                col -= 1;  // 转换为0索引
+                col -= 1; // Adjust to 0-based indexing
 
-                // 检查列是否已满
-                grid.checkColumnFull(col);
-
-                // 放置棋子
-                player.takeTurn(grid, col);
-                System.out.println(grid);
-
-                // 检查是否获胜
-                if (grid.isWinningMove(col, player.getSymbol())) {
-                    System.out.println("Player " + player.getName() + " wins!");
-                    return true;  // 游戏结束
+                if (col < 0 || col >= 7) {
+                    System.out.println("Invalid input. Please enter a valid column number.");
+                    continue;
                 }
 
-                return false;  // 正常结束回合
+                // Ensure column is not full
+                grid.checkColumnFull(col);
+
+                // Make the move
+                grid.makeMove(currentPlayer.getSymbol(), col);
+
+                System.out.println(grid);
+
+                // Check for a win condition after the move
+                if (grid.isWinningMove(col, currentPlayer.getSymbol())) {
+                    System.out.println("Player " + currentPlayer.getName() + " wins!");
+                    return false; // End the game
+                }
+
+                return true; // Continue the game if no one has won
             } catch (ColumnFullException e) {
                 System.out.println(e.getMessage());
             } catch (Exception e) {
                 System.out.println("Invalid input. Please enter a valid column number.");
-                sc.nextLine();  // 清除无效输入
+                sc.nextLine(); // Clear the invalid input
             }
         }
     }
 }
+
+
+
+
+

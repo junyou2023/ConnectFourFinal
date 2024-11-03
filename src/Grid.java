@@ -5,14 +5,11 @@ public class Grid implements Serializable {
     private static final long serialVersionUID = 1L;
     private char[][] grid;
     private Stack<Disc> moveHistory;
-    private Player player1;
-    private Player player2;
 
-    public Grid(Player player1, Player player2) {
+
+    public Grid() {
         grid = new char[6][7];
         moveHistory = new Stack<>();
-        this.player1 = player1;
-        this.player2 = player2;
         for (int row = 0; row < grid.length; row++) {
             for (int col = 0; col < grid[row].length; col++) {
                 grid[row][col] = ' ';
@@ -20,13 +17,6 @@ public class Grid implements Serializable {
         }
     }
 
-    public Player getPlayer1() {
-        return player1;
-    }
-
-    public Player getPlayer2() {
-        return player2;
-    }
 
     // 在指定列放置棋子
     public boolean makeMove(char symbol, int col) {
@@ -108,20 +98,6 @@ public class Grid implements Serializable {
         return count >= 4;  // 四个相同符号连成一线则返回 true
     }
 
-    // 将当前网格状态保存到文件
-    public void saveGame(String filename) throws IOException {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {
-            oos.writeObject(this);  // 保存当前 Grid 对象
-            System.out.println("Game saved successfully to " + filename);
-        }
-    }
-
-    // 从文件加载网格状态
-    public static Grid loadGame(String filename) throws IOException, ClassNotFoundException {
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename))) {
-            return (Grid) ois.readObject();  // 加载 Grid 对象
-        }
-    }
 
     // 可视化网格状态
     @Override
