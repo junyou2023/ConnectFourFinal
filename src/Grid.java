@@ -39,8 +39,8 @@ public class Grid implements Serializable {
             return true;
         } else {
             System.out.println("No moves to undo.");
-            return false;
         }
+        return false;
     }
 
     // 检查列是否已满
