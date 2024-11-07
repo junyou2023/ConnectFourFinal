@@ -66,10 +66,8 @@ public class Main {
 
                 if (col == -2) {
                     // Save the game state
-                    Player opponent = (currentPlayer == player1) ? player2 : player1;
                     GameSaver.saveGame(new GameState(grid, player1, player2, currentPlayer), "saved_game.dat");
                     System.out.println("Game saved.");
-                    continue;
                 } else if (col == -1) {
                     // Undo last move
                     if (grid.undoMove()) {
@@ -78,15 +76,10 @@ public class Main {
                     } else {
                         System.out.println("No moves to undo.");
                     }
-                    continue;
                 }
 
                 col -= 1; // Adjust to 0-based indexing
 
-                if (col < 0 || col >= 7) {
-                    System.out.println("Invalid input. Please enter a valid column number.");
-                    continue;
-                }
 
                 // Ensure column is not full
                 grid.checkColumnFull(col);
