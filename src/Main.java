@@ -2,8 +2,8 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        // Create scanner for user input and display welcome menu
         try (Scanner sc = new Scanner(System.in)) {
+            // Display the main menu with options for starting a new game, loading a saved game, or exiting
             System.out.println("Welcome to Connect Four!");
             System.out.println("1. Start New Game");
             System.out.println("2. Load Game");
@@ -11,7 +11,7 @@ public class Main {
 
             int choice = 0;
 
-            // Loop until a valid choice (1, 2, or 3) is entered
+            // Prompt user for a valid menu choice (1, 2, or 3), ensuring input is an integer and within range
             while (true) {
                 System.out.print("Please enter a choice (1, 2, or 3): ");
 
@@ -29,44 +29,56 @@ public class Main {
                 }
             }
 
-            // Exit the game if the user chooses option 3
+            // If user chooses to exit, terminate the program
             if (choice == 3) {
                 System.out.println("Exiting the game. Goodbye!");
                 return;
             }
 
-            // Initialize game data based on user choice (new game or load saved game)
+            // Initialize the game data based on the user's choice (new game or load saved game)
             GameData gameData = initializeGame(choice, sc);
             Grid grid = gameData.grid;
             Player currentPlayer = gameData.currentPlayer;
             Player player1 = gameData.player1;
             Player player2 = gameData.player2;
 
-            // Display initial empty grid
+            // Display the initial empty game grid
             System.out.println(grid);
             boolean gameInProgress = true;
 
-            // Main game loop: runs while the game is in progress
+            // Main game loop: alternates between players until the game ends (win, draw, or exit)
             while (gameInProgress) {
-                gameInProgress = takeTurn(currentPlayer, grid, player1, player2, sc);
-                // Switch players after each turn
+                // Execute the current player's turn, passing the game grid and player details
+                gameInProgress = currentPlayer.takeTurn(grid, player1, player2, sc);
+
+                // Alternate players for the next turn by switching currentPlayer
                 currentPlayer = (currentPlayer == player1) ? player2 : player1;
             }
 
-            // End game message
+            // Display a message when the game ends
             System.out.println("Thank you for playing!");
         }
     }
 
     /**
-     * Inner class to encapsulate core game components for easy management.
+     * Nested class to encapsulate core game data (grid, players) for easier management.
+     * This class groups together the game grid, the two players, and the current player,
+     * simplifying the passing of these components to other methods.
      */
     private static class GameData {
-        Grid grid;
-        Player player1;
-        Player player2;
-        Player currentPlayer;
+        Grid grid;           // The Connect Four grid (game board)
+        Player player1;      // Player 1 instance
+        Player player2;      // Player 2 instance
+        Player currentPlayer; // The player who is currently taking their turn
 
+        /**
+         * Constructs a GameData object with the provided grid and player information.
+         *
+         * @param grid          The game grid.
+         * @param player1       Player 1 instance.
+         * @param player2       Player 2 instance.
+         * @param currentPlayer The player currently taking their turn.
+         */
         GameData(Grid grid, Player player1, Player player2, Player currentPlayer) {
             this.grid = grid;
             this.player1 = player1;
@@ -76,15 +88,16 @@ public class Main {
     }
 
     /**
-     * Initializes game data by either starting a new game or loading a saved game.
+     * Initializes the game by either loading a saved game or starting a new game,
+     * depending on the user's choice.
      *
      * @param choice The user's menu choice (1 for new game, 2 for load game).
-     * @param sc     The Scanner object for user input.
-     * @return       A GameData object containing initialized game components.
+     * @param sc     Scanner object to capture user input.
+     * @return       A GameData object with initialized game components.
      */
     private static GameData initializeGame(int choice, Scanner sc) {
         if (choice == 2) {
-            // Attempt to load game state from file
+            // Attempt to load a saved game state from a file
             GameState loadedState = GameSaver.loadGame("saved_game.dat");
             if (loadedState != null) {
                 System.out.println("Game loaded successfully.");
@@ -98,145 +111,40 @@ public class Main {
                 System.out.println("Failed to load game. Starting a new game instead...");
             }
         }
-        // If loading fails or user chooses a new game, create fresh game data
+        // Start a new game if loading fails or user selects "Start New Game"
         return startNewGame(sc);
     }
 
     /**
-     * Starts a new game by creating players and initializing a fresh grid.
+     * Starts a new game by creating player instances and initializing an empty grid.
      *
-     * @param sc The Scanner object for user input.
-     * @return   A GameData object with initialized players and grid.
+     * @param sc The Scanner object for capturing user input.
+     * @return   A GameData object with new game components, setting Player 1 to start.
      */
     private static GameData startNewGame(Scanner sc) {
-        Player player1 = createPlayer(sc, 1); // Create Player 1
-        Player player2 = createPlayer(sc, 2); // Create Player 2
-        Grid grid = new Grid(); // Initialize a new grid
+        Player player1 = createPlayer(sc, 1); // Initialize Player 1 with a name and symbol
+        Player player2 = createPlayer(sc, 2); // Initialize Player 2 with a name and symbol
+        Grid grid = new Grid();               // Create a new empty game grid
         return new GameData(grid, player1, player2, player1); // Player 1 starts first
     }
 
     /**
-     * Prompts the user for player details and creates a Player object.
+     * Prompts the user to enter player details (name and symbol), creating a new Player instance.
      *
-     * @param sc           The Scanner object for user input.
-     * @param playerNumber The player number (1 or 2).
-     * @return             A new Player object with specified name and symbol.
+     * @param sc           Scanner object for reading user input.
+     * @param playerNumber The player's number (1 or 2), used for prompting and symbol assignment.
+     * @return             A new Player object initialized with the specified name and symbol.
      */
     private static Player createPlayer(Scanner sc, int playerNumber) {
         System.out.print("Enter name for Player " + playerNumber + ": ");
         String name = sc.nextLine();
-        char symbol = (playerNumber == 1) ? 'X' : 'O';
+        char symbol = (playerNumber == 1) ? 'X' : 'O'; // Assign 'X' to Player 1 and 'O' to Player 2
         return new Player(name, symbol);
     }
-
-    /**
-     * Manages a single player's turn, including move validation and special commands.
-     *
-     * @param currentPlayer The player currently taking their turn.
-     * @param grid          The game grid.
-     * @param player1       Player 1 (needed for save operations).
-     * @param player2       Player 2 (needed for save operations).
-     * @param sc            The Scanner object for user input.
-     * @return              True if the game continues, false if it ends (win or exit).
-     */
-    private static boolean takeTurn(Player currentPlayer, Grid grid, Player player1, Player player2, Scanner sc) {
-        while (true) {
-            try {
-                // Prompt for column input or special command (-1, -2, -3)
-                int col = promptPlayerMove(currentPlayer, sc);
-                if (col == -3) return exitGame(); // Handle exit command
-                if (col == -2) { // Save game command
-                    saveGame(grid, player1, player2, currentPlayer);
-                    continue; // End current iteration, maintaining the current player's turn
-                }
-                if (col == -1) { // Undo last move command
-                    if (undoLastMove(grid)) return true;
-                    continue;
-                }
-
-                // Adjust input to 0-based indexing for the grid
-                col -= 1;
-                if (grid.checkColumnFull(col)) {
-                    System.out.println("The selected column is full. Please choose another column.");
-                    continue;
-                }
-
-                // Place disc for the current player and display the updated grid
-                currentPlayer.takeTurn(grid, col);
-                System.out.println(grid);
-
-                // Check for win condition
-                if (grid.isWinningMove(col, currentPlayer.getSymbol())) {
-                    System.out.println("Player " + currentPlayer.getName() + " wins!");
-                    return false; // End game on win
-                }
-
-                // Check for a draw condition (full grid with no winner)
-                if (grid.isGridFull()) {
-                    System.out.println("The grid is full! The game is a draw.");
-                    return false; // End game on draw
-                }
-
-                return true; // Continue game if no win
-
-            } catch (Exception e) {
-                System.out.println("Invalid input. Please enter a valid column number.");
-                sc.nextLine(); // Clear invalid input
-            }
-        }
-    }
-
-    /**
-     * Prompts the player to enter a column number or special command.
-     *
-     * @param currentPlayer The player currently taking their turn.
-     * @param sc            The Scanner object for user input.
-     * @return              The column number or special command.
-     */
-    private static int promptPlayerMove(Player currentPlayer, Scanner sc) {
-        System.out.println("Player " + currentPlayer.getName() + " (" + currentPlayer.getSymbol() + "), enter column (1-7) or -1 to undo, -2 to save, -3 to exit:");
-        return sc.nextInt();
-    }
-
-    /**
-     * Saves the game state to a file for future loading.
-     *
-     * @param grid          The game grid.
-     * @param player1       Player 1 data.
-     * @param player2       Player 2 data.
-     * @param currentPlayer The player whose turn it is.
-     */
-    private static void saveGame(Grid grid, Player player1, Player player2, Player currentPlayer) {
-        GameSaver.saveGame(new GameState(grid, player1, player2, currentPlayer), "saved_game.dat");
-        System.out.println("Game saved.");
-    }
-
-    /**
-     * Undoes the last move by removing the most recent disc from the grid.
-     *
-     * @param grid The game grid.
-     * @return     True if undo was successful, false otherwise.
-     */
-    private static boolean undoLastMove(Grid grid) {
-        if (grid.undoMove()) {
-            System.out.println("Last move undone.");
-            System.out.println(grid);
-            return true;
-        }
-        System.out.println("No moves to undo.");
-        return false;
-    }
-
-    /**
-     * Exits the game by displaying an exit message and returning false to end the game loop.
-     *
-     * @return Always returns false to indicate the game should end.
-     */
-    private static boolean exitGame() {
-        System.out.println("Exiting the game...");
-        return false;
-    }
 }
+
+
+
 
 
 

@@ -7,7 +7,7 @@ import java.io.Serializable;
  * recorded and restored, which is useful for undo functionality and saving game state.
  */
 public class Disc implements Serializable {
-    private static final long serialVersionUID = 1L; // Ensures compatibility during serialization
+    private static final long serialVersionUID = 1L; // Ensures version consistency during serialization
 
     private final char symbol; // The symbol of the player who placed this disc ('X' or 'O')
     private final int row;     // The row position of the disc in the grid (0-indexed)

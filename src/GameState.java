@@ -6,7 +6,7 @@ import java.io.Serializable;
  * to allow game states to be saved and loaded.
  */
 public class GameState implements Serializable {
-    private static final long serialVersionUID = 1L; // Ensures compatibility during serialization
+    private static final long serialVersionUID = 1L; // Ensures version consistency during serialization
 
     private final Grid grid;            // The current game board state
     private final Player player1;       // Player 1 information
